@@ -5,7 +5,7 @@
 **Version:** 1.0  
 **Date:** October 15, 2025  
 **Platform:** Oracle Database 23ai + APEX 24.2.9  
-**Author:** AI Product Team
+**Author:** AlaaEldin Abdelmoneim
 
 ---
 
@@ -40,16 +40,16 @@ This package provides a **centralized AI model management layer** that allows mu
 ---
 
 ## 🏗️ Architecture Overview
-
+I created the centeral ai schema and name it "AI", you change to whatever your centeral one is.
 ```
 ┌────────────────────────────────────────┐
-│        AI Schema (Central Hub)          │
-│                                         │
+│        AI Schema (Central Hub)         │
+│                                        │
 │  ┌──────────────────────────────────┐  │
 │  │   ONNX Model: ALL_MINILM_L12_V2  │  │
 │  │   (384-dim embeddings)           │  │
 │  └──────────────────────────────────┘  │
-│               ↓                         │
+│               ↓                        │
 │  ┌──────────────────────────────────┐  │
 │  │   PKG_AI_VECTOR_UTIL Package     │  │
 │  │   • generate_embedding()         │  │
@@ -57,7 +57,7 @@ This package provides a **centralized AI model management layer** that allows mu
 │  │   • semantic_search()            │  │
 │  │   • health_check()               │  │
 │  └──────────────────────────────────┘  │
-│               ↓                         │
+│               ↓                        │
 │  ┌──────────────────────────────────┐  │
 │  │   Metadata Tables & Views        │  │
 │  │   • ai_model_registry            │  │
@@ -67,9 +67,9 @@ This package provides a **centralized AI model management layer** that allows mu
 └────────────────────────────────────────┘
               ↓ (EXECUTE grants)
 ┌────────────────────────────────────────┐
-│       Consumer Schemas                  │
-│   AI7P   AI6P   AI10P   RAG   SQLAI   │
-│      ↓      ↓      ↓      ↓      ↓     │
+│       Consumer Schemas                 │
+│   DBuser1   DBuser2                    │
+│      ↓      ↓                          │
 │   Call AI.PKG_AI_VECTOR_UTIL.*()       │
 └────────────────────────────────────────┘
 ```
@@ -111,7 +111,7 @@ This package provides a **centralized AI model management layer** that allows mu
 - Oracle Database 23ai with AI Vector Search
 - DBMS_VECTOR package available
 - DBMS_CLOUD package (for model loading)
-- Oracle APEX 24.2.9 (for PM Copilot app)
+ 
 
 ### Privileges Needed (AI Schema)
 ```sql
@@ -145,12 +145,9 @@ GRANT READ, WRITE ON DIRECTORY ONNX_DIR TO AI;
 CONNECT admin/password@database
 
 -- Grant necessary privileges to AI schema
-GRANT DB_DEVELOPER_ROLE TO AI;
-GRANT CREATE MINING MODEL TO AI;
-GRANT EXECUTE ON DBMS_VECTOR TO AI;
-GRANT EXECUTE ON DBMS_CLOUD TO AI;
-GRANT READ, WRITE ON DIRECTORY ONNX_DIR TO AI;
-GRANT UNLIMITED TABLESPACE TO AI;
+  
+  @01-Directory-for-Embedding-Model.sql
+  @02-grants_to_use_ONNX Models.sql
 ```
 
 ### Step 2: Load ONNX Model (AI Schema)
@@ -160,29 +157,29 @@ GRANT UNLIMITED TABLESPACE TO AI;
 CONNECT ai/password@database
 
 -- Run model loading script (if not already loaded)
-@load_onnx_model.sql
+@03-loading-AI-Embedding-Model.sql
 ```
 
 ### Step 3: Create Metadata Tables (AI Schema)
 
 ```sql
 -- Still connected as AI
-@ai_metadata_tables.sql
+@04-ai_metadata_tables.sql
 ```
 
 ### Step 4: Create Package (AI Schema)
 
 ```sql
 -- Create package specification
-@pkg_ai_vector_util_spec.sql
+@05-ai_vector_util_specs.sql
 
 -- Create package body
-@pkg_ai_vector_util_body.sql
+@06-ai_vector_util_body.sql
 
 -- Verify compilation
 SELECT object_name, status 
 FROM user_objects 
-WHERE object_name = 'PKG_AI_VECTOR_UTIL';
+WHERE object_name = 'AI_VECTOR_UTIL';
 -- Should show VALID for both PACKAGE and PACKAGE BODY
 ```
 
@@ -190,25 +187,25 @@ WHERE object_name = 'PKG_AI_VECTOR_UTIL';
 
 ```sql
 -- Run grant script
-@grant_ai_access.sql
+@07-grant_Objects.sql
 ```
 
 ### Step 6: Create Synonyms (Each Consumer Schema)
 
 ```sql
--- Connect as consumer schema (e.g., AI7P)
-CONNECT ai7p/password@database
+-- Connect as consumer schema (e.g., <<AI100>>)
+CONNECT AI100/password@database
 
 -- Create synonym
-CREATE OR REPLACE SYNONYM pkg_ai_vector_util 
-FOR AI.pkg_ai_vector_util;
+CREATE OR REPLACE SYNONYM ai_vector_Utx FOR AI.ai_vector_util;
 ```
 
 ### Step 7: Test Installation (Consumer Schema)
 
 ```sql
 -- Run comprehensive test script
-@test_ai_wrapper.sql
+select  ai.ai_vector_util.generate_embedding( 'الحمد لله رب العالمين') embd from dual;
+select ai_vector_utx.generate_embedding( 'الحمد لله رب العالمين') embd from dual;
 ```
 
 ---
@@ -218,17 +215,7 @@ FOR AI.pkg_ai_vector_util;
 ### Basic Embedding Generation
 
 ```sql
-DECLARE
-    v_embedding VECTOR(384);
-BEGIN
-    v_embedding := pkg_ai_vector_util.generate_embedding(
-        p_text => 'PM Copilot is an AI-powered APEX application'
-    );
-    
-    -- Use the embedding
-    DBMS_OUTPUT.PUT_LINE('Generated 384-dimensional vector');
-END;
-/
+select ai_vector_utx.generate_embedding( 'PM Copilot is an AI-powered APEX application') embd from dual;
 ```
 
 ### Batch Processing
@@ -237,13 +224,13 @@ END;
 DECLARE
     TYPE text_array IS TABLE OF CLOB INDEX BY PLS_INTEGER;
     v_texts text_array;
-    v_embeddings pkg_ai_vector_util.t_vector_array;
+    v_embeddings ai_vector_utx.t_vector_array;
 BEGIN
     v_texts(1) := 'First document';
     v_texts(2) := 'Second document';
     v_texts(3) := 'Third document';
     
-    v_embeddings := pkg_ai_vector_util.generate_embedding_batch(
+    v_embeddings := ai_vector_utx.generate_embedding_batch(
         p_text_array => v_texts
     );
     
@@ -263,9 +250,9 @@ DECLARE
     v_title VARCHAR2(200);
 BEGIN
     -- Search for similar documents
-    v_results := pkg_ai_vector_util.similarity_search(
+    v_results := ai_vector_utx.similarity_search(
         p_query_vector => pkg_ai_vector_util.generate_embedding(v_query_text),
-        p_schema_name => 'AI7P',
+        p_schema_name => '<<<<schema name>>',
         p_table_name => 'PM_DOCUMENT_CHUNKS',
         p_vector_column => 'EMBEDDING',
         p_text_column => 'CHUNK_TEXT',
@@ -289,7 +276,7 @@ END;
 ### Health Check
 
 ```sql
-SELECT pkg_ai_vector_util.health_check() AS status FROM dual;
+SELECT ai_vector_utx.health_check() AS status FROM dual;
 -- Returns: HEALTHY, DEGRADED, or DOWN
 ```
 
@@ -297,15 +284,15 @@ SELECT pkg_ai_vector_util.health_check() AS status FROM dual;
 
 ```sql
 -- Your schema's usage
-SELECT * FROM AI.v_daily_usage_by_schema 
+SELECT * FROM AI.ai_daily_usage_by_schema_v
 WHERE calling_schema = USER
 ORDER BY usage_date DESC;
 
 -- Model health
-SELECT * FROM AI.v_model_health;
+SELECT * FROM AI.ai_model_health_v;
 
 -- Recent errors
-SELECT * FROM AI.v_error_summary;
+SELECT * FROM AI.ai_error_summary_v;
 ```
 
 ---
@@ -348,13 +335,13 @@ SELECT * FROM AI.v_error_summary;
 
 ```sql
 -- Check model health
-SELECT * FROM AI.v_model_health;
+SELECT * FROM AI.ai_model_health_v;
 
 -- Real-time usage (last hour)
-SELECT * FROM AI.v_realtime_usage;
+SELECT * FROM AI.ai_realtime_usage_v;
 
 -- Error summary
-SELECT * FROM AI.v_error_summary
+SELECT * FROM AI.ai_error_summary_v
 WHERE last_occurrence > SYSDATE - 1;
 ```
 
@@ -363,13 +350,13 @@ WHERE last_occurrence > SYSDATE - 1;
 ```sql
 -- Aggregate daily metrics (run via scheduler)
 BEGIN
-    AI.aggregate_daily_metrics(p_target_date => SYSDATE - 1);
+    AI.ai_aggregate_daily_metrics(p_target_date => SYSDATE - 1);
 END;
 /
 
 -- Cleanup old logs (keep 90 days)
 BEGIN
-    AI.cleanup_old_logs(p_retention_days => 90);
+    AI.ai_cleanup_old_logs(p_retention_days => 90);
 END;
 /
 ```
@@ -414,7 +401,7 @@ SELECT model_name FROM AI.user_mining_models;
 -- Verify grants from AI schema
 SELECT grantee, privilege 
 FROM AI.user_tab_privs 
-WHERE table_name = 'PKG_AI_VECTOR_UTIL';
+WHERE table_name = 'AI_VECTOR_UTIL';
 
 -- Re-run grant script if needed
 @grant_ai_access.sql
@@ -444,9 +431,9 @@ WITH TARGET ACCURACY 95;
 -- Chunk the text first
 DECLARE
     v_long_text CLOB := /* your long text */;
-    v_chunks pkg_ai_vector_util.t_text_array;
+    v_chunks ai.ai_vector_util.t_text_array;
 BEGIN
-    v_chunks := pkg_ai_vector_util.chunk_text(
+    v_chunks := ai.ai_vector_util.chunk_text(
         p_text => v_long_text,
         p_chunk_size => 512,
         p_overlap => 50
@@ -482,7 +469,7 @@ END;
 ### 1. Always Use Synonyms
 Create synonyms in consumer schemas for cleaner code:
 ```sql
-CREATE SYNONYM pkg_ai FOR AI.pkg_ai_vector_util;
+CREATE SYNONYM  ai_vector_utx FOR AI.ai_vector_util;
 ```
 
 ### 2. Batch When Possible
@@ -495,7 +482,7 @@ Check your usage regularly to understand patterns and costs.
 Always wrap API calls in exception handlers:
 ```sql
 BEGIN
-    v_embedding := pkg_ai_vector_util.generate_embedding(v_text);
+    v_embedding := ai.ai_vector_util.generate_embedding(v_text);
 EXCEPTION
     WHEN OTHERS THEN
         -- Log error and handle gracefully
