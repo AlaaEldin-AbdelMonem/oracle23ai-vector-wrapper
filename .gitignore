@@ -205,3 +205,54 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# ------------------------------
+# Oracle APEX / Database / SQL
+# ------------------------------
+*.sql~
+*.log
+*.lst
+*.dmp
+*.tmp
+/export/
+# Ignore local or large schema exports
+*/apex_export_*.sql
+
+# ------------------------------
+# AI / Model Artifacts
+# ------------------------------
+*.onnx
+*.bin
+*.pt
+*.h5
+*.ckpt
+/models/
+# Keep model references documented, not uploaded
+
+# ------------------------------
+# Output / Temporary Data
+# ------------------------------
+*.csv
+*.xlsx
+*.xls
+/output/
+*.cache/
+logs/
+temp/
+tmp/
+notebooks/.ipynb_checkpoints
+
+# ------------------------------
+# Credentials / API Keys / Config Files
+# ------------------------------
+config.json
+secrets.json
+apikeys.json
+credentials.json
+*.key
+*.pem
+*.crt
+*.p12
+*.config
+
