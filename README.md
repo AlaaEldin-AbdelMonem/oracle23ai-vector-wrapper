@@ -506,40 +506,14 @@ END;
 ### 5. Chunk Long Documents
 Always chunk documents >2000 words before embedding.
 
----
-
-## 📞 Support
-
-For questions or issues:
-1. Check the troubleshooting section above
-2. Review usage logs: `SELECT * FROM AI.v_error_summary`
-3. Contact the AI Platform team
-
----
-
-## 🗺️ Roadmap
-
-### Phase 2 (Q1 2026)
-- [ ] Multiple model support (different sizes/languages)
-- [ ] Caching layer for frequently used embeddings
-- [ ] Rate limiting per schema
-- [ ] GraphQL API layer
-
-### Phase 3 (Q2 2026)
-- [ ] Fine-tuning capabilities
-- [ ] Real-time streaming
-- [ ] GPU acceleration
-- [ ] Multi-language support
-
----
-
+ 
 ## 📄 License
 
-Internal use only - PM Copilot Project  
+MIT
 Oracle Corporation © 2025
 
 ---
 
 **Document Version:** 1.0  
 **Last Updated:** October 15, 2025  
-**Maintained By:** AI Platform Team
+**Maintained By:** AlaaEldin Abdelmoneim
