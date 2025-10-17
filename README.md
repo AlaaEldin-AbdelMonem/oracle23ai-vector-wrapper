@@ -51,7 +51,7 @@ I created the centeral ai schema and name it "AI", you change to whatever your c
 │  └──────────────────────────────────┘  │
 │               ↓                        │
 │  ┌──────────────────────────────────┐  │
-│  │   PKG_AI_VECTOR_UTIL Package     │  │
+│  │   AI_VECTOR_UTIL Package         │  │
 │  │   • generate_embedding()         │  │
 │  │   • similarity_search()          │  │
 │  │   • semantic_search()            │  │
@@ -70,7 +70,7 @@ I created the centeral ai schema and name it "AI", you change to whatever your c
 │       Consumer Schemas                 │
 │   DBuser1   DBuser2                    │
 │      ↓      ↓                          │
-│   Call AI.PKG_AI_VECTOR_UTIL.*()       │
+│   Call AI.AI_VECTOR_UTIL.*()           │
 └────────────────────────────────────────┘
 ```
 
@@ -87,30 +87,14 @@ I created the centeral ai schema and name it "AI", you change to whatever your c
 - No duplicate 133MB model storage per schema
 - Shared compute resources
 - Centralized token tracking
-
-### 3. **Enhanced Monitoring**
-- Track usage by schema and user
-- Performance metrics and trends
-- Health status dashboard
-
-### 4. **Better Security**
-- Controlled access via grants
-- No direct model manipulation
-- Audit trail for all operations
-
-### 5. **Scalability**
-- Easy to add new consumer schemas
-- Can upgrade models without schema changes
-- Support for multiple models in future
-
+ 
 ---
 
 ## 📋 Prerequisites
 
 ### Database Requirements
-- Oracle Database 23ai with AI Vector Search
-- DBMS_VECTOR package available
-- DBMS_CLOUD package (for model loading)
+- Oracle Database 23ai  
+ 
  
 
 ### Privileges Needed (AI Schema)
@@ -133,81 +117,15 @@ GRANT READ, WRITE ON DIRECTORY ONNX_DIR TO AI;
 ### Consumer Schema Requirements
 - Must exist before granting access
 - No special privileges needed (just EXECUTE on package)
+- Optionaly you can create synonym for the package
 
 ---
 
 ## 🚀 Installation Guide
 
-### Step 1: Prepare AI Schema
+### All Scripts are in "SQL" forlder (01,02,...........)
 
-```sql
--- Connect as ADMIN/DBA
-CONNECT admin/password@database
-
--- Grant necessary privileges to AI schema
-  
-  @01-Directory-for-Embedding-Model.sql
-  @02-grants_to_use_ONNX Models.sql
-```
-
-### Step 2: Load ONNX Model (AI Schema)
-
-```sql
--- Connect as AI
-CONNECT ai/password@database
-
--- Run model loading script (if not already loaded)
-@03-loading-AI-Embedding-Model.sql
-```
-
-### Step 3: Create Metadata Tables (AI Schema)
-
-```sql
--- Still connected as AI
-@04-ai_metadata_tables.sql
-```
-
-### Step 4: Create Package (AI Schema)
-
-```sql
--- Create package specification
-@05-ai_vector_util_specs.sql
-
--- Create package body
-@06-ai_vector_util_body.sql
-
--- Verify compilation
-SELECT object_name, status 
-FROM user_objects 
-WHERE object_name = 'AI_VECTOR_UTIL';
--- Should show VALID for both PACKAGE and PACKAGE BODY
-```
-
-### Step 5: Grant Access to Consumer Schemas (AI Schema)
-
-```sql
--- Run grant script
-@07-grant_Objects.sql
-```
-
-### Step 6: Create Synonyms (Each Consumer Schema)
-
-```sql
--- Connect as consumer schema (e.g., <<AI100>>)
-CONNECT AI100/password@database
-
--- Create synonym
-CREATE OR REPLACE SYNONYM ai_vector_Utx FOR AI.ai_vector_util;
-```
-
-### Step 7: Test Installation (Consumer Schema)
-
-```sql
--- Run comprehensive test script
-select  ai.ai_vector_util.generate_embedding( 'الحمد لله رب العالمين') embd from dual;
-select ai_vector_utx.generate_embedding( 'الحمد لله رب العالمين') embd from dual;
-```
-
+ 
 ---
 
 ## 💡 Usage Examples
@@ -251,7 +169,7 @@ DECLARE
 BEGIN
     -- Search for similar documents
     v_results := ai_vector_utx.similarity_search(
-        p_query_vector => pkg_ai_vector_util.generate_embedding(v_query_text),
+        p_query_vector => ai_vector_util.generate_embedding(v_query_text),
         p_schema_name => '<<<<schema name>>',
         p_table_name => 'PM_DOCUMENT_CHUNKS',
         p_vector_column => 'EMBEDDING',
@@ -391,7 +309,7 @@ ORDER BY avg_ms DESC;
 SELECT model_name FROM AI.user_mining_models;
 
 -- If missing, reload model
-@load_onnx_model.sql
+  Re-check Model loading script in sql folder
 ```
 
 ### Problem: "Insufficient privileges" when calling functions
@@ -404,7 +322,7 @@ FROM AI.user_tab_privs
 WHERE table_name = 'AI_VECTOR_UTIL';
 
 -- Re-run grant script if needed
-@grant_ai_access.sql
+   sql folder
 ```
 
 ### Problem: Performance is slow
@@ -452,16 +370,7 @@ END;
 
 ## 📁 Files Included
 
-| File | Purpose |
-|------|---------|
-| `pm_copilot_ai_wrapper_design.md` | Complete architecture design document |
-| `pkg_ai_vector_util_spec.sql` | Package specification (interface) |
-| `pkg_ai_vector_util_body.sql` | Package body (implementation) |
-| `ai_metadata_tables.sql` | Supporting tables and views |
-| `grant_ai_access.sql` | Grant script for consumer schemas |
-| `test_ai_wrapper.sql` | Comprehensive test suite |
-| `README.md` | This file |
-
+ check project directories
 ---
 
 ## 🎓 Best Practices
